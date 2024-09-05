@@ -1,0 +1,133 @@
+---
+title: "Downloading Stock Prices in R"
+output: html_notebook
+---
+
+### Install and load [dplyr](https://dplyr.tidyverse.org/), [tidyquant](%22https://cran.r-project.org/web/packages/tidyquant/index.html%22), and [ggplot2](%22https://ggplot2.tidyverse.org/%22)
+
+```{r}
+if (!require("dplyr", quietly = TRUE)) {
+  install.packages("dplyr")
+  library(dplyr)
+}
+if (!require("tidyquant", quietly = TRUE)) {
+  install.packages("tidyquant")
+  library(tidyquant)
+}
+if (!require("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+  library(ggplot2)
+}
+```
+
+### 1. Download the stock prices for a single stock using tidyquant
+
+```{r}
+AAPL <- tq_get('AAPL',
+               from = "2020-01-01",
+               to = Sys.Date(),
+               get = "stock.prices")
+```
+
+#### 1.1 Print the head and tail to review the downloaded data
+
+```{r}
+print(rbind(head(AAPL), tail(AAPL)))
+```
+
+### 1.2a Chart the historical stock price using quaintmod
+
+```{r}
+chart_Series(AAPL['2020-01/2024-08'])
+```
+
+### 1.3b Chart the historical stock price using ggplot
+
+```{r}
+aapl %>%
+  ggplot(aes(x = date, y = adjusted)) +
+  geom_line() +
+  theme_classic() +
+  labs(x = 'Date',
+       y = "Adjusted Price",
+       title = "Apple price chart") +
+  scale_y_continuous(breaks = seq(0,300,10))
+```
+
+### 1.4 Save the plot as a png
+
+```{r}
+pdf(file = 'aapl.pdf')
+aapl %>%
+  ggplot(aes(x = date, y = adjusted)) +
+  geom_line() +
+  theme_classic() +
+  labs(x = 'Date',
+       y = "Adjusted Price",
+       title = "Apple price chart") +
+  scale_y_continuous(breaks = seq(0,300,10))
+dev.off()
+```
+
+### 1.5 Write the data to a text file
+
+```{r}
+write.table(AAPL, "AAPL.txt", row.names = FALSE)
+```
+
+### 2. Download the stock prices for multiple stocks
+
+```{r}
+tickers = c("AAPL", "QQQ", "SPY", "VOO", "VTI", "HIMS")
+
+prices <- tq_get(tickers,
+                 from = "2020-01-01",
+                 to = Sys.Date(),
+                 get = "stock.prices")
+```
+
+### 2.1 Review the downloaded data
+
+```{r}
+prices %>%
+  group_by(symbol) %>%
+  slice(1)
+```
+
+### 2.2 Chart the historical stock prices using ggplot
+
+```{r}
+prices %>%
+  ggplot(aes(x = date, y = adjusted, color = symbol)) +
+  geom_line() +
+  facet_wrap(~symbol,scales = 'free_y') +
+  theme_classic() +
+  labs(x = 'Date',
+       y = "Adjusted Price",
+       title = "Price Chart") +
+  scale_x_date(date_breaks = "month",
+               date_labels = "%b\n%y")
+```
+
+### 2.3 Save the plot as a pdf
+
+```{r}
+pdf(file = 'prices.pdf')
+prices %>%
+  ggplot(aes(x = date, y = adjusted, color = symbol)) +
+  geom_line() +
+  facet_wrap(~symbol,scales = 'free_y') +
+  theme_classic() +
+  labs(x = 'Date',
+       y = "Adjusted Price",
+       title = "Price Chart") +
+  scale_x_date(date_breaks = "month",
+               date_labels = "%b\n%y")
+dev.off()
+```
+
+### 2.4 Write the data to a text file
+
+```{r}
+write.table(prices, "prices.txt", row.names = FALSE)
+```
